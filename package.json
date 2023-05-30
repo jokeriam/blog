@@ -18,6 +18,8 @@
     "mongoose": "^6.8.3",
     "node": "^19.4.0",
     "nodemon": "^2.0.20",
+    "passport": "^0.6.0",
+    "passport-local": "^1.0.0",
     "start": "^5.1.0"
   }
 }

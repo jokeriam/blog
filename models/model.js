@@ -17,7 +17,14 @@ const blog_obj = mongoose.model("Blog",new mongoose.Schema({
     }
 }));
 
+const user_obj = mongoose.model("User",new mongoose.Schema({
+    username: String,
+    password: {
+      type: String,
+      select: false //不返回密码字段
+    },
+}));
 
 module.exports = {
-    blog_obj, author_obj
+    blog_obj, author_obj, user_obj
 }

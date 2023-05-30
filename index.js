@@ -3,22 +3,12 @@ const express = require("express");
 const mongoose = require("mongoose");
 const app = express();
 
-
 mongoose.set("strictQuery", true);
 mongoose.connect("mongodb://127.0.0.1:27017/BlogDb");
 
 const {
     blog_obj,author_obj
 } = require("./models/model.js");
-
-
-const session = require("express-session");
-
-app.use(session({
-  secret: "my_secret_key", // 设置 session 加密密钥
-  resave: false,
-  saveUninitialized: true
-}));
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({extended:true}));
@@ -38,34 +28,63 @@ app.use((req, res, next) => {
     }
 });
   
-// app.post("/login", async (req, res) => {
-//     const { username, password } = req.body;
-//     // 在此处写入验证逻辑，检查用户输入的用户名和密码是否正确
-//     // 如果验证成功，则将用户信息存储在 session 中，并跳转到主页
-//     req.session.user = { username };
-//     res.redirect("/");
-//   });
-
-app.get("/login", async (req, res) => {
-    res.render('login'); 
+app.get("/register", async (req, res) => {
+  res.render("register.ejs");
 });
 
-// app.get('/register', (req, res) => {
-//     res.render('register'); //渲染注册页面
-// });
-  
-// app.post('/register', (req, res) => {
-//     const { username, password, email } = req.body;
-//     const newUser = new User({ username, email });
-//     User.register(newUser, password, (err, user) => {
-//       if (err) {
-//         console.log(err);
-//         return res.render('register', { error: err.message }); //返回错误信息到注册页面
-//       }
-//       req.flash('success', '您已成功注册，请登录。'); //添加成功信息
-//       res.redirect('/login'); //注册成功后转到登录页面
-//     });
-// });
+app.post("/register", async (req, res) => {
+  // 获取表单数据
+  const { username, password } = req.body;
+
+  try {
+    // 创建用户
+    const user = await user_obj.create({
+      username: username,
+      password: password,
+    });
+    console.log(`Created user with id ${user._id}`);
+    return res.redirect("/");
+  } catch (error) {
+    console.log(error);
+    return res.render("register.ejs", { error: "Failed to create user." });
+  }
+});
+
+app.get("/login", async (req, res) => {
+  res.render("login.ejs");
+});
+
+app.post("/login", async (req, res) => {
+  // 获取表单数据
+  const { username, password } = req.body;
+
+  try {
+    // 根据用户名查找用户
+    const user = await user_obj.findOne({ username: username }).select("+password");
+    if (!user) {
+      return res.render("login.ejs", { error: "Invalid credentials" });
+    }
+
+    // 验证密码
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.render("login.ejs", { error: "Invalid credentials" });
+    }
+
+    // 将用户信息存储在session中
+    req.session.user = { id: user._id, username: user.username };
+    return res.redirect("/");
+  } catch (error) {
+    console.log(error);
+    return res.render("login.ejs", { error: "Failed to login." });
+  }
+});
+
+app.get("/logout", async (req, res) => {
+  // 删除session中的用户信息
+  req.session.user = null;
+  return res.redirect("/");
+});
 
 
 app.get("/", async(req,res)=>{
@@ -76,7 +95,7 @@ app.get("/", async(req,res)=>{
         blog.authorName = author.name;
     }
     res.render("index.ejs",{bdata:data})
-})
+});
 
 app.get("/addnew",async(req, res) => {
     const data3 = await author_obj.find({});
