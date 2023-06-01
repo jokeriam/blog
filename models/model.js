@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
-const author_obj = mongoose.model("Author",new mongoose.Schema({
-    name: String,
-    age: String,
-    contact: String,
+const author_obj = mongoose.model("Author", new mongoose.Schema({
+  name: String,
+  age: String,
+  contact: String
 }));
 
 const blog_obj = mongoose.model("Blog",new mongoose.Schema({
@@ -13,16 +13,16 @@ const blog_obj = mongoose.model("Blog",new mongoose.Schema({
     likes:String,
     author: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Authors"
+        ref: "Author"
     }
 }));
 
-const user_obj = mongoose.model("User",new mongoose.Schema({
-    username: String,
-    password: {
-      type: String,
-      select: false //不返回密码字段
-    },
+const user_obj = mongoose.model("User", new mongoose.Schema({
+  username: String,
+  password: {
+    type: String,
+    select: false //不返回密码字段
+  }
 }));
 
 module.exports = {

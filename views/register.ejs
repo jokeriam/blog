@@ -19,6 +19,10 @@ table th {
   overflow: hidden;
 }
 
+.in {
+  margin-left: 430pt;
+}
+
     </style>
   </head>
 
@@ -38,8 +42,8 @@ table th {
             <div class="col-12">
               <div class="card bg-dark shadow-2-strong">
                 <div class="card-body">
-                  <h1 class="text-center text-white mb-4">用户登录</h1>
-                  <form method="post" action="/login">
+                  <h1 class="text-center text-white mb-4">用户注册</h1>
+                  <form method="post" action="/register">
                     <div class="form-floating mb-3">
                       <input type="text" class="form-control" id="username" name="username" placeholder="用户名">
                       <label for="username">用户名</label>
@@ -48,8 +52,8 @@ table th {
                       <input type="password" class="form-control" id="password" name="password" placeholder="密码">
                       <label for="password">密码</label>
                     </div>
-                    <button type="submit" class="btn btn-primary">登录</button>
-                    <button href="/register" class="btn btn-danger">注册</button>
+                    <button type="submit" class="btn btn-primary in">注册</button>
+                    <a href="/login" class="btn btn-danger">返回登陆</a>
                   </form>
                 </div>
               </div>

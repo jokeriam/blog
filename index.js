@@ -1,5 +1,7 @@
 const { response } = require("express");
 const express = require("express");
+const session = require("express-session");
+const bcrypt = require('bcrypt');
 const mongoose = require("mongoose");
 const app = express();
 
@@ -7,27 +9,38 @@ mongoose.set("strictQuery", true);
 mongoose.connect("mongodb://127.0.0.1:27017/BlogDb");
 
 const {
-    blog_obj,author_obj
+    blog_obj,author_obj,user_obj
 } = require("./models/model.js");
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({extended:true}));
 
 
+// 浏览器会话信息存储于session之中
+app.use(session({
+  secret: "secret_key",
+  resave: false,
+  saveUninitialized: true,
+}));
+
+
+// 拦截器，用于验证用户身份
 app.use((req, res, next) => {
-    if (req.path === "/login") {
-      // 如果用户请求的是登陆页面，则不需要验证用户是否已登录
-      next();
-    } else if (req.session && req.session.user) {
-      // 如果用户已经登录，则将用户信息存储在 req.locals 中
-      res.locals.user = req.session.user;
-      next();
-    } else {
-      // 如果用户还未登录，则跳转到登陆页面
-      res.redirect("/login");
-    }
+  if (req.path === "/login" || req.path === "/register") {
+    // 如果用户请求的是登陆或者注册页面，则不需要验证用户是否已登录
+    next();
+  } else if (req.session && req.session.user) {
+    // 如果用户已经登录，则将用户信息存储在 req.locals 中
+    res.locals.user = req.session.user;
+    next();
+  } else {
+    // 如果用户还未登录，则跳转到登陆页面
+    res.redirect("/login");
+  }
 });
-  
+
+
+// 注册页面路由
 app.get("/register", async (req, res) => {
   res.render("register.ejs");
 });
@@ -37,11 +50,15 @@ app.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    // 密码加密
+    const hash = bcrypt.hashSync(password, 10);
+
     // 创建用户
     const user = await user_obj.create({
       username: username,
-      password: password,
+      password: hash
     });
+
     console.log(`Created user with id ${user._id}`);
     return res.redirect("/");
   } catch (error) {
@@ -50,6 +67,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
+// 登录页面路由
 app.get("/login", async (req, res) => {
   res.render("login.ejs");
 });
@@ -61,12 +79,12 @@ app.post("/login", async (req, res) => {
   try {
     // 根据用户名查找用户
     const user = await user_obj.findOne({ username: username }).select("+password");
-    if (!user) {
+    if (user) {
       return res.render("login.ejs", { error: "Invalid credentials" });
     }
 
     // 验证密码
-    const isMatch = await user.comparePassword(password);
+    const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
       return res.render("login.ejs", { error: "Invalid credentials" });
     }
@@ -80,11 +98,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/logout", async (req, res) => {
-  // 删除session中的用户信息
-  req.session.user = null;
-  return res.redirect("/");
-});
 
 
 app.get("/", async(req,res)=>{
@@ -151,17 +164,6 @@ app.post("/edit/:id", async(req,res)=>{
     await blog_obj.findByIdAndUpdate(req.params.id,req.body)
     res.redirect("/");
 });
-
-// app.get("/search", async(req, res) => {
-//     const query = req.query.title;
-//     const data = await blog_obj.find({ title: { $regex: query, $options: "i" } });
-//     // 这里使用正则表达式来进行模糊匹配查询
-//     for (const blog of data) {
-//       const author = await author_obj.findOne(blog.author);
-//       blog.authorName = author.name;
-//     }
-//     res.render("index.ejs", { bdata: data });
-// });
 
 app.get("/search", async(req, res) => {
     const title = req.query.title;
